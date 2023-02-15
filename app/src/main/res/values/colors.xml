@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="light_gray">#F8F5FC</color>
+
+
+    <color name="day_purple">#431AA1</color>
+    <color name="day_white">#FAF8FC</color>
+    <color name="day_dark_purple">#2E0D8A</color>
+    <color name="day_light_purple">#9345F2</color>
+    <color name="day_soft_purple">#EEE1FD</color>
+    <color name="day_dark_gray">#C9C9D5</color>
+    <color name="day_gray">#EAE9F1</color>
+    <color name="day_darker_purple">#260F68</color>
+    <color name="day_orange">#E6704A</color>
+
+    <color name="night_black">#010313</color>
+    <color name="night_light_purple">#943DF4</color>
+    <color name="night_dark_purple">#1E0771</color>
+    <color name="night_purple">#2B0C8B</color>
+    <color name="night_blue">#101E4D</color>
+    <color name="night_gray">#D2BEE8</color>
+    <color name="night_brown">#524158</color>
+    <color name="night_orange">#D5724A</color>
+    <color name="night_darker_purple">#011341</color>
+</resources>
