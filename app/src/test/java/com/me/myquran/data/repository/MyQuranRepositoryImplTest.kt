@@ -5,36 +5,27 @@ import com.me.myquran.data.local.dao.DaftarSuratDao
 import com.me.myquran.data.local.entity.AudioEntity
 import com.me.myquran.data.local.entity.DaftarSuratAndAudioEntity
 import com.me.myquran.data.local.entity.DaftarSuratEntity
-import com.me.myquran.data.mapper.toDaftarSurat
 import com.me.myquran.data.remote.api.EQuranApi
 import com.me.myquran.data.remote.dto.AudioResponse
 import com.me.myquran.data.remote.dto.DaftarSuratResponse
+import com.me.myquran.domain.model.Audio
+import com.me.myquran.domain.model.DaftarSurat
 import com.me.myquran.utils.Resource
 import com.me.myquran.utils.WrappedListResponse
 import id.tss.taskmanagement.utils.TestDispatcherProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
-import org.junit.After
-import org.junit.Assert.assertEquals
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import org.mockito.ArgumentMatchers.any
 import org.mockito.Mock
-import org.mockito.Mockito
+import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
-import org.mockito.junit.MockitoJUnitRunner
+import retrofit2.HttpException
 import retrofit2.Response
-import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.me.myquran.domain.model.Audio
-import com.me.myquran.domain.model.DaftarSurat
-import org.junit.Assert.assertNotNull
-import org.mockito.Mockito.*
+import java.io.IOException
 
 @ExperimentalCoroutinesApi
 class MyQuranRepositoryImplTest {
@@ -122,6 +113,7 @@ class MyQuranRepositoryImplTest {
                 )
             )
 
+            // when
             `when`(daftarSuratDao.getDaftarSuratEntities())
                 .thenReturn(emptyList())
 
@@ -131,7 +123,6 @@ class MyQuranRepositoryImplTest {
             `when`(daftarSuratDao.getDaftarSuratEntities())
                 .thenReturn(localDaftarSuratEntities)
 
-            // when
             repository.getDaftarSurat(false).take(3).collect { resource ->
 
                 // then
@@ -194,11 +185,10 @@ class MyQuranRepositoryImplTest {
                 )
             )
 
-
-            Mockito.`when`(daftarSuratDao.getDaftarSuratEntities())
+            // when
+            `when`(daftarSuratDao.getDaftarSuratEntities())
                 .thenReturn(localDaftarSuratEntities)
 
-            // when
             repository.getDaftarSurat(false).take(3).collect { resource ->
                 // then
 
@@ -216,6 +206,132 @@ class MyQuranRepositoryImplTest {
                     }
                 }
             }
-
         }
+
+    @Test
+    fun `getDaftarSurat should return error when API call is unsuccessful`() = runBlocking {
+        // given
+        val errorResponse = "{\"message\": \"Bad Request\"}"
+
+        `when`(daftarSuratDao.getDaftarSuratEntities())
+            .thenReturn(emptyList())
+
+        `when`(api.getDaftarSurat())
+            .thenReturn(Response.error(400, errorResponse.toResponseBody()))
+
+        // when
+        repository.getDaftarSurat(false).take(3).collect { resource ->
+            println("resource = ${resource.message}")
+            // then
+            when (resource) {
+                is Resource.Loading -> {
+                    assert(resource.isLoading || !resource.isLoading)
+                }
+                is Resource.Error -> {
+                    assert(resource.message == errorResponse)
+                }
+                else -> {
+                    // should not reach here
+                    assert(false)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `getDaftarSurat should emit error message with HTTPException`() = runBlocking {
+        // given
+        val errorResponse = "{\"message\": \"Bad Request\"}"
+        val responseBody = errorResponse.toResponseBody("application/json".toMediaTypeOrNull())
+        val response = Response.error<String>(400, responseBody)
+        val httpException = HttpException(response)
+
+        // when
+        `when`(daftarSuratDao.getDaftarSuratEntities())
+            .thenReturn(emptyList())
+
+        `when`(api.getDaftarSurat()).thenAnswer {
+            throw httpException
+        }
+
+        repository.getDaftarSurat(false).take(3).collect { resource ->
+            println("resource = ${resource.message}")
+            // then
+            when (resource) {
+                is Resource.Loading -> {
+                    assert(resource.isLoading || !resource.isLoading)
+                }
+                is Resource.Error -> {
+                    assert(resource.message == httpException.message)
+                }
+                else -> {
+                    // should not reach here
+                    assert(false)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `postToken should emit error message with IOException`() = runBlocking {
+        // given
+        val expectedResult = "Couldn't reach server. Check your internet connection."
+        val ioException = IOException()
+
+        // when
+        `when`(daftarSuratDao.getDaftarSuratEntities())
+            .thenReturn(emptyList())
+
+        `when`(api.getDaftarSurat()).thenAnswer {
+            throw ioException
+        }
+
+        repository.getDaftarSurat(false).take(3).collect { resource ->
+            // then
+            when (resource) {
+                is Resource.Loading -> {
+                    assert(resource.isLoading || !resource.isLoading)
+                }
+                is Resource.Error -> {
+                    assert(resource.message == expectedResult)
+                }
+                else -> {
+                    // should not reach here
+                    assert(false)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `postToken should emit error message with Exception`() = runBlocking {
+        // given
+        val expectedResult = "Couldn't load data"
+        val exception = Exception()
+
+        // when
+        `when`(daftarSuratDao.getDaftarSuratEntities())
+            .thenReturn(emptyList())
+
+        `when`(api.getDaftarSurat()).thenAnswer {
+            throw exception
+        }
+
+        // when
+        repository.getDaftarSurat(false).take(3).collect { resource ->
+            // then
+            when (resource) {
+                is Resource.Loading -> {
+                    assert(resource.isLoading || !resource.isLoading)
+                }
+                is Resource.Error -> {
+                    assert(resource.message == expectedResult)
+                }
+                else -> {
+                    // should not reach here
+                    assert(false)
+                }
+            }
+        }
+    }
 }

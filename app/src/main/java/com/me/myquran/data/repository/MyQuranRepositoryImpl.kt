@@ -30,9 +30,11 @@ class MyQuranRepositoryImpl @Inject constructor(
         return flow {
             emit(Resource.Loading(true))
             var localDaftarSuratAndAudio = daftarSuratDao.getDaftarSuratEntities()
-            emit(Resource.Success(data = localDaftarSuratAndAudio.map {
-                it.toDaftarSurat()
-            }))
+            if(localDaftarSuratAndAudio.isNotEmpty()){
+                emit(Resource.Success(data = localDaftarSuratAndAudio.map {
+                    it.toDaftarSurat()
+                }))
+            }
             val shouldJustLoadFromCache = localDaftarSuratAndAudio.isNotEmpty() && !fetchFromRemote
             if (shouldJustLoadFromCache) {
                 emit(Resource.Loading(false))
@@ -57,20 +59,19 @@ class MyQuranRepositoryImpl @Inject constructor(
                         emit(Resource.Success(data = localDaftarSuratAndAudio.map {
                             it.toDaftarSurat()
                         }))
-//                        emit(Resource.Success(data = daftarSuratResponse.data?.map { it.toDaftarSurat() }))
                     } else {
-                        emit(Resource.Error(response.errorBody()!!.string()))
+                        emit(Resource.Error(message = response.errorBody()!!.string()))
                     }
                 }
             } catch (e: HttpException) {
-                e.printStackTrace()
-                emit(Resource.Error(e.localizedMessage ?: "An unexpected error occurred"))
+//                e.printStackTrace()
+                emit(Resource.Error(message = e.localizedMessage ?: "An unexpected error occurred"))
             } catch (e: IOException) {
-                e.printStackTrace()
-                emit(Resource.Error("Couldn't reach server. Check your internet connection."))
+//                e.printStackTrace()
+                emit(Resource.Error(message = "Couldn't reach server. Check your internet connection."))
             } catch (e: Exception) {
-                e.printStackTrace()
-                emit(Resource.Error("Couldn't load data"))
+//                e.printStackTrace()
+                emit(Resource.Error(message = "Couldn't load data"))
             }
             emit(Resource.Loading(false))
         }.flowOn(dispatcherProvider.io)
