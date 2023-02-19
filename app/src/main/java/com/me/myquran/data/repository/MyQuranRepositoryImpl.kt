@@ -1,6 +1,8 @@
 package com.me.myquran.data.repository
 
 import com.me.myquran.data.local.MyQuranDatabase
+import com.me.myquran.data.local.dao.AudioDao
+import com.me.myquran.data.local.dao.DaftarSuratDao
 import com.me.myquran.data.mapper.*
 import com.me.myquran.data.remote.api.EQuranApi
 import com.me.myquran.domain.model.DaftarSurat
@@ -18,17 +20,16 @@ import javax.inject.Inject
 
 class MyQuranRepositoryImpl @Inject constructor(
     private val api: EQuranApi,
-    private val db: MyQuranDatabase,
+    private val daftarSuratDao: DaftarSuratDao,
+    private val audioDao: AudioDao,
     private val dispatcherProvider: DispatcherProvider,
 ) : MyQuranRepository {
-    private val daftarSuratDao = db.daftarSuratDao
-    private val audioDao = db.audioDao
     override suspend fun getDaftarSurat(
         fetchFromRemote: Boolean,
     ): Flow<Resource<List<DaftarSurat>>> {
         return flow {
             emit(Resource.Loading(true))
-            val localDaftarSuratAndAudio = daftarSuratDao.getDaftarSuratEntities()
+            var localDaftarSuratAndAudio = daftarSuratDao.getDaftarSuratEntities()
             emit(Resource.Success(data = localDaftarSuratAndAudio.map {
                 it.toDaftarSurat()
             }))
@@ -52,10 +53,11 @@ class MyQuranRepositoryImpl @Inject constructor(
                                 it.map { daftarSurat -> daftarSurat.toAudioEntity() }
                             )
                         }
-                        emit(Resource.Success(
-                            data = daftarSuratDao.getDaftarSuratEntities()
-                                .map { it.toDaftarSurat() }
-                        ))
+                        localDaftarSuratAndAudio = daftarSuratDao.getDaftarSuratEntities()
+                        emit(Resource.Success(data = localDaftarSuratAndAudio.map {
+                            it.toDaftarSurat()
+                        }))
+//                        emit(Resource.Success(data = daftarSuratResponse.data?.map { it.toDaftarSurat() }))
                     } else {
                         emit(Resource.Error(response.errorBody()!!.string()))
                     }

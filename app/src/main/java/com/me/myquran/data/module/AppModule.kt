@@ -3,6 +3,8 @@ package com.me.myquran.data.module
 import android.app.Application
 import androidx.room.Room
 import com.me.myquran.data.local.MyQuranDatabase
+import com.me.myquran.data.local.dao.AudioDao
+import com.me.myquran.data.local.dao.DaftarSuratDao
 import com.me.myquran.data.local.migration.migration_1_2
 import com.me.myquran.data.remote.api.EQuranApi
 import com.me.myquran.data.repository.MyQuranRepositoryImpl
@@ -29,10 +31,11 @@ object AppModule {
     @Singleton
     fun provideHomeRepository(
         api: EQuranApi,
-        db: MyQuranDatabase,
+        daftarSuratDao: DaftarSuratDao,
+        audioDao: AudioDao,
         dispatcherProvider: DispatcherProvider,
     ): MyQuranRepository {
-        return MyQuranRepositoryImpl(api, db, dispatcherProvider)
+        return MyQuranRepositoryImpl(api, daftarSuratDao, audioDao, dispatcherProvider)
     }
 
     @Provides
@@ -45,4 +48,15 @@ object AppModule {
         ).build()
     }
 
+    @Provides
+    @Singleton
+    fun providDaftarSuratDao(db: MyQuranDatabase): DaftarSuratDao {
+        return db.daftarSuratDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideAudioDao(db: MyQuranDatabase): AudioDao {
+        return db.audioDao
+    }
 }
